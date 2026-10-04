@@ -240,6 +240,38 @@ window.calculatorApp.setApiBase('http://127.0.0.1:8001/api')  // 运行时切换
 
 ---
 
+## 7.1 永久部署到 GitHub Pages
+
+本项目是**零构建的纯静态站点**（`src/` 目录就是站点根目录），
+因此可以直接免费、永久地发布到 GitHub Pages，不依赖任何人的电脑开机。
+
+仓库里已经准备好工作流：`.github/workflows/deploy-pages.yml`。
+
+**使用前在 GitHub 仓库里配置两项（各点几下）：**
+
+| 位置 | 配置 |
+| --- | --- |
+| Settings → Secrets and variables → Actions → **Variables** | 新建变量 `CALC_API_BASE` = `https://<你的后端地址>/api` |
+| Settings → **Pages** → Build and deployment → Source | 选择 **GitHub Actions** |
+
+之后每次 push 到 `main` 分支（或在 Actions 页面手动 Run workflow），
+就会自动发布到 `https://<用户名>.github.io/<仓库名>/`。
+
+**工作流做了什么**：在构建时把
+
+```html
+<script>window.__CALC_API_BASE__ = 'https://<你的后端地址>/api';</script>
+```
+
+注入到 `src/index.html` 的 `</head>` 之前，因此**源码一行都不用改**——
+本地开发依旧默认连 `127.0.0.1:8000`，线上则自动指向云端后端。
+这正是第 6.2 节那条优先级规则（`?api=` > 注入值 > 自动推断）发挥作用的地方。
+
+> 完整的端到端部署步骤（含后端与数据库）见项目根目录的
+> `docs/永久部署指南.md`。
+
+---
+
 ## 8. 与后端联调的验证步骤
 
 按顺序执行，每步都有明确的预期结果：
