@@ -1,0 +1,85 @@
+# ---------------------------------------------------------------------------
+# 把前端发布到 GitHub Pages（永久在线，不依赖任何人的电脑开机）
+#
+# 触发：push 到 main 分支，或在 Actions 页面手动 Run workflow
+#
+# 关键一步是「注入后端 API 地址」：
+#   前端源码里默认连本机 127.0.0.1:8000（方便本地开发），
+#   部署到 Pages 之后必须指向云端后端。
+#   这里用仓库变量 CALC_API_BASE 在构建时注入 window.__CALC_API_BASE__，
+#   因此不需要改动任何源码（index.html 与 config.js 保持原样）。
+#
+# 使用前请在 GitHub 仓库里配置：
+#   Settings -> Secrets and variables -> Actions -> Variables
+#     新建变量 CALC_API_BASE = https://<你的后端地址>/api
+#   Settings -> Pages -> Source 选择 "GitHub Actions"
+# ---------------------------------------------------------------------------
+name: Deploy frontend to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build static site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 注入后端 API 地址
+        env:
+          CALC_API_BASE: ${{ vars.CALC_API_BASE }}
+        run: |
+          set -euo pipefail
+          API="${CALC_API_BASE:-/api}"
+          if [ -z "${CALC_API_BASE:-}" ]; then
+            echo "::warning::仓库变量 CALC_API_BASE 未设置，页面将回退到同源 /api"
+          fi
+          sed -i "s#</head>#<script>window.__CALC_API_BASE__='${API}';</script></head>#" src/index.html
+          echo "注入结果："
+          grep -o "__CALC_API_BASE__='[^']*'" src/index.html
+
+      - name: 站点结构自检
+        run: |
+          set -euo pipefail
+          test -f src/index.html
+          test -f src/css/style.css
+          test -f src/js/app.js
+          test -f src/js/api.js
+          test -f src/js/config.js
+          test -f src/js/ui.js
+          # Actions 方式部署不会执行 Jekyll，这里再放一个标记文件双保险
+          touch src/.nojekyll
+          echo "静态资源检查通过"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: src
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

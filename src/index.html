@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="832402204 陈俊洁">
+  <meta name="description" content="前后端分离计算器前端：零构建的原生 HTML + CSS + ES Module，全部计算由后端 /api/calculate 完成。">
+  <title>前后端分离计算器 · 832402204 陈俊洁</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230ea5e9'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle' fill='%23ffffff'%3E%3D%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body data-ready="false" data-busy="false">
+
+  <!-- 跳转到主内容（无障碍） -->
+  <a class="skip-link" href="#calculator">跳到计算器</a>
+
+  <!-- ===================== 顶部：标题 / 后端状态 / 主题切换 ===================== -->
+  <header class="app-header">
+    <div class="app-header__brand">
+      <h1 class="app-header__title">
+        前后端分离计算器
+        <span class="app-header__student">· 832402204 陈俊洁</span>
+      </h1>
+      <p class="app-header__subtitle">
+        前端只负责界面与交互，全部运算结果均来自后端
+        <code>POST /api/calculate</code>
+      </p>
+    </div>
+    <div class="app-header__actions">
+      <span class="status" data-testid="backend-status" data-state="unknown">后端状态检测中…</span>
+      <button type="button" class="btn btn--ghost" data-testid="theme-toggle" aria-pressed="false"
+              title="切换到深色主题（Ctrl/Cmd + D）">🌙 深色主题</button>
+    </div>
+  </header>
+
+  <!-- ===================== 主体：宽屏两栏 / 窄屏单列 ===================== -->
+  <main class="layout">
+
+    <!-- ------------------------------ 左栏：计算器 ------------------------------ -->
+    <section class="column column--calc" id="calculator" aria-label="计算器">
+
+      <article class="card card--calc">
+        <header class="card__head">
+          <h2 class="card__title">输入区</h2>
+          <span class="card__hint">支持键盘直接输入；<kbd>Enter</kbd> 计算 · <kbd>Esc</kbd> 清空 · <kbd>Backspace</kbd> 退格</span>
+        </header>
+
+        <!-- 显示区：表达式 / 结果 / 实时预览 / 错误 -->
+        <section class="display" aria-label="结果区" aria-live="polite">
+          <div class="display__row">
+            <span class="display__label">表达式</span>
+            <output class="display__expression" data-testid="display-expression">—</output>
+          </div>
+          <div class="display__row display__row--result">
+            <span class="display__label">结果</span>
+            <output class="display__result" data-testid="display-result">—</output>
+            <button type="button" class="btn btn--small" data-testid="copy-result"
+                    title="复制结果到剪贴板">复制结果</button>
+          </div>
+          <p class="display__preview" data-testid="display-preview" hidden></p>
+          <p class="display__error" data-testid="display-error" hidden role="alert"></p>
+        </section>
+
+        <!-- 输入框 -->
+        <div class="field">
+          <label class="field__label" for="expression-input">
+            表达式输入框
+            <span class="field__tip">（× ÷ 会在发送前自动转成 * /）</span>
+          </label>
+          <input class="field__input" id="expression-input" data-testid="expression-input"
+                 type="text" inputmode="text" autocomplete="off" autocapitalize="off"
+                 spellcheck="false" placeholder="例如 (1+2)*3 或 sqrt(9)">
+        </div>
+
+        <!-- 科学面板：固定扩展运算符 + 由 /api/meta/functions 动态生成的函数区 -->
+        <section class="sci-panel" data-testid="sci-panel" data-state="loading" aria-label="科学面板">
+          <div class="sci-panel__head">
+            <h3 class="sci-panel__title">科学面板</h3>
+            <span class="sci-panel__hint" data-testid="sci-panel-hint">正在从 /api/meta/functions 加载…</span>
+          </div>
+          <div class="sci-panel__group" role="group" aria-label="扩展运算符">
+            <button type="button" class="key key--op" data-testid="key-power" data-insert="^"
+                    title="幂运算（插入 ^）">^</button>
+            <button type="button" class="key key--op" data-testid="key-factorial" data-insert="!"
+                    title="阶乘（插入 !）">!</button>
+            <button type="button" class="key key--op" data-testid="key-percent" data-insert="%"
+                    title="取模（插入 %）">%</button>
+          </div>
+          <div class="sci-panel__dynamic" data-testid="sci-fn-list" role="group"
+               aria-label="后端提供的科学函数与常量"></div>
+          <p class="sci-panel__note" data-testid="sci-panel-note">
+            函数与常量列表由后端元数据接口动态渲染，前端不硬编码。
+          </p>
+        </section>
+
+        <!-- 数字键盘 -->
+        <section class="keypad" data-testid="keypad" role="group" aria-label="数字与基本运算符">
+          <button type="button" class="key key--fn" data-testid="key-clear" data-action="clear" title="清空输入">C</button>
+          <button type="button" class="key key--fn" data-testid="key-backspace" data-action="backspace" title="退格">⌫</button>
+          <button type="button" class="key key--fn" data-testid="key-lparen" data-insert="(" title="左括号">(</button>
+          <button type="button" class="key key--fn" data-testid="key-rparen" data-insert=")" title="右括号">)</button>
+
+          <button type="button" class="key" data-testid="key-7" data-insert="7">7</button>
+          <button type="button" class="key" data-testid="key-8" data-insert="8">8</button>
+          <button type="button" class="key" data-testid="key-9" data-insert="9">9</button>
+          <button type="button" class="key key--op" data-testid="key-divide" data-insert="÷" title="除法（发送 /）">÷</button>
+
+          <button type="button" class="key" data-testid="key-4" data-insert="4">4</button>
+          <button type="button" class="key" data-testid="key-5" data-insert="5">5</button>
+          <button type="button" class="key" data-testid="key-6" data-insert="6">6</button>
+          <button type="button" class="key key--op" data-testid="key-multiply" data-insert="×" title="乘法（发送 *）">×</button>
+
+          <button type="button" class="key" data-testid="key-1" data-insert="1">1</button>
+          <button type="button" class="key" data-testid="key-2" data-insert="2">2</button>
+          <button type="button" class="key" data-testid="key-3" data-insert="3">3</button>
+          <button type="button" class="key key--op" data-testid="key-minus" data-insert="-" title="减法">-</button>
+
+          <button type="button" class="key" data-testid="key-0" data-insert="0">0</button>
+          <button type="button" class="key" data-testid="key-dot" data-insert="." title="小数点">.</button>
+          <button type="button" class="key key--equals" data-testid="key-equals" data-action="equals"
+                  title="提交后端计算（persist=true）">=</button>
+          <button type="button" class="key key--op" data-testid="key-plus" data-insert="+" title="加法">+</button>
+        </section>
+      </article>
+    </section>
+
+    <!-- --------------------------- 右栏：统计 + 历史 --------------------------- -->
+    <section class="column column--side" aria-label="统计与历史">
+
+      <!-- 统计区 -->
+      <article class="card card--stats">
+        <header class="card__head">
+          <h2 class="card__title">统计区</h2>
+          <span class="card__hint">数据来源：<code>GET /api/history/statistics</code></span>
+        </header>
+        <div class="stats" data-testid="statistics">
+          <div class="stat">
+            <span class="stat__label">总计算次数</span>
+            <strong class="stat__value" data-testid="stat-total">—</strong>
+          </div>
+          <div class="stat">
+            <span class="stat__label">今日计算</span>
+            <strong class="stat__value" data-testid="stat-today">—</strong>
+          </div>
+          <div class="stat">
+            <span class="stat__label">收藏数</span>
+            <strong class="stat__value" data-testid="stat-favorite">—</strong>
+          </div>
+          <div class="stat">
+            <span class="stat__label">最常用运算符</span>
+            <strong class="stat__value" data-testid="stat-operator">—</strong>
+          </div>
+          <dl class="stats__detail">
+            <div class="stats__row">
+              <dt>运算符分布</dt>
+              <dd data-testid="stat-distribution">—</dd>
+            </div>
+            <div class="stats__row">
+              <dt>首次计算</dt>
+              <dd data-testid="stat-first-time">—</dd>
+            </div>
+            <div class="stats__row">
+              <dt>最近计算</dt>
+              <dd data-testid="stat-last-time">—</dd>
+            </div>
+          </dl>
+          <p class="stats__message" data-testid="statistics-message" hidden></p>
+        </div>
+      </article>
+
+      <!-- 历史区 -->
+      <article class="card card--history">
+        <header class="card__head">
+          <h2 class="card__title">历史区</h2>
+          <span class="card__hint">数据来源：<code>GET /api/history</code>（每次删除/收藏后重新查询）</span>
+        </header>
+
+        <!-- 检索与筛选 -->
+        <div class="filters">
+          <div class="filters__row">
+            <label class="filters__field filters__field--grow">
+              <span class="filters__label">关键字</span>
+              <input type="search" data-testid="history-search" placeholder="搜索表达式或结果"
+                     autocomplete="off" spellcheck="false">
+            </label>
+            <label class="filters__field">
+              <span class="filters__label">起始日期</span>
+              <input type="date" data-testid="history-start-date">
+            </label>
+            <label class="filters__field">
+              <span class="filters__label">结束日期</span>
+              <input type="date" data-testid="history-end-date">
+            </label>
+          </div>
+          <div class="filters__row filters__row--actions">
+            <label class="switch">
+              <input type="checkbox" data-testid="history-favorite-only">
+              <span>仅看收藏</span>
+            </label>
+            <button type="button" class="btn btn--danger" data-testid="history-clear-all">清空全部</button>
+          </div>
+        </div>
+
+        <!-- 列表 -->
+        <ul class="history" data-testid="history-list" aria-label="计算历史列表"></ul>
+
+        <!-- 分页 -->
+        <nav class="pager" aria-label="历史分页">
+          <button type="button" class="btn btn--small" data-testid="history-page-prev">上一页</button>
+          <span class="pager__info" data-testid="history-page-info">第 1 / 1 页 · 共 0 条</span>
+          <button type="button" class="btn btn--small" data-testid="history-page-next">下一页</button>
+        </nav>
+      </article>
+    </section>
+  </main>
+
+  <!-- ===================== 底部说明 ===================== -->
+  <footer class="app-footer">
+    <span>当前 API 基地址：<code data-testid="api-base">—</code></span>
+    <span class="app-footer__sep">·</span>
+    <span>可用 URL 参数：<code>?api=</code> · <code>?theme=dark</code> · <code>?expr=1%2B2*3</code></span>
+    <span class="app-footer__sep">·</span>
+    <span>自动化接口：<code>window.calculatorApp</code></span>
+  </footer>
+
+  <!-- Toast 容器（单条 Toast 为 [data-testid="toast-item"]） -->
+  <div class="toast-stack" data-testid="toast" aria-live="polite" aria-atomic="false"></div>
+
+  <noscript>
+    <p class="noscript">本页面需要启用 JavaScript 才能运行（计算由后端完成，前端负责交互与展示）。</p>
+  </noscript>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

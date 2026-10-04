@@ -1,0 +1,35 @@
+# 依赖与包管理器产物（本项目零构建，正常不会产生）
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+.npm/
+.pnpm-store/
+
+# 编辑器 / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 日志与临时文件
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tmp
+*.bak
+.cache/
+
+# Python 相关（仅当在仓库根目录运行脚本时可能产生）
+__pycache__/
+*.py[cod]
+
+# 本地个人配置（不上传）
+.env
+.env.local
