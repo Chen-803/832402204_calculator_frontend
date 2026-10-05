@@ -17,8 +17,16 @@ const ALLOWED_HOSTS = (process.env.VITE_ALLOWED_HOSTS || '.trycloudflare.com,loc
   .map((item) => item.trim())
   .filter(Boolean);
 
+// 静态资源前缀。
+//   * 本机 / 根路径部署：'./' 与 '/' 都可以；
+//   * 部署到子路径（例如 GitHub Pages 的 https://<user>.github.io/<repo>/）：
+//     必须用相对前缀 './'，否则 /assets/... 会 404。
+// 需要显式指定时用环境变量覆盖，例如 VITE_BASE_PATH=/832402204_calculator_frontend/
+const BASE_PATH = process.env.VITE_BASE_PATH || './';
+
 export default defineConfig({
   plugins: [vue()],
+  base: BASE_PATH,
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

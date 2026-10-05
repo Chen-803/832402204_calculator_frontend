@@ -1,0 +1,75 @@
+# ============================================================================
+# 把前端构建产物发布到 GitHub Pages（只托管**静态前端**）
+#
+# ⚠️ 重要：GitHub Pages 只能托管静态文件，**无法运行后端**。
+#    本仓库部署到 Pages 后，计算/历史仍然由独立部署的后端 API 提供
+#    （前后端分离架构本来就是两个仓库、两台服务）。
+#
+# 使用前需要在仓库里设置一次：
+#   1. Settings → Pages → Build and deployment → Source 选 "GitHub Actions"
+#   2. Settings → Secrets and variables → Actions → Variables 新建变量：
+#        VITE_API_BASE_URL = https://<你的后端公网地址>
+#      （不设置也能部署，但页面会退回本机默认地址，需要靠 ?api= 参数指定）
+#   3. 推送 main 分支，或在 Actions 页面手动 Run workflow
+#
+# 部署完成后地址形如：https://<用户名>.github.io/<仓库名>/
+# ============================================================================
+name: Deploy frontend to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (relative base path, backend address injected)
+        env:
+          # 相对前缀，保证在 https://<user>.github.io/<repo>/ 下资源不 404
+          VITE_BASE_PATH: ./
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+        run: |
+          echo "VITE_API_BASE_URL = ${VITE_API_BASE_URL:-(未设置，页面将依赖 ?api= 参数或 config.js)}"
+          npm run build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

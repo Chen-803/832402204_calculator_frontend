@@ -122,16 +122,27 @@ npm run preview
 
 ## 五、配置说明
 
-前端唯一的环境变量是 **`VITE_API_BASE_URL`**（后端基地址）。
+前端的环境变量只有 **`VITE_API_BASE_URL`**（后端基地址）。
 
 - 文件：`.env.development`（已在仓库中）
   ```ini
   VITE_API_BASE_URL=http://127.0.0.1:8000
   ```
-- `src/api/http.js` 中的读取方式（带兜底，未配置时也能跑）：
-  ```js
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-  ```
+
+### 后端地址的解析顺序（支持运行时切换）
+
+`src/api/http.js` 会按下面的顺序解析后端地址，**越靠前优先级越高**：
+
+| 优先级 | 来源 | 说明 |
+| --- | --- | --- |
+| 1 | 页面地址上的 `?api=https://...` | 会记入 localStorage，便于分享一个可用的页面链接；换后端不用重新构建 |
+| 2 | `localStorage['calc-api-base']` | 上次用 `?api=` 指定的地址 |
+| 3 | `window.__API_BASE__`（`public/config.js`） | **部署后可直接改这个文件**来切换后端，无需重新 `npm run build` |
+| 4 | `VITE_API_BASE_URL` | 构建期注入（`.env.*` 或 CI 变量） |
+| 5 | `http://127.0.0.1:8000` | 本机兜底，助教克隆后即可直接运行 |
+
+之所以要做运行时解析：静态托管（如 GitHub Pages）只能承载前端，后端地址随时可能变化，
+把地址放到运行时就不再需要「改地址 → 重新构建 → 重新部署」。
 
 ### 想连别的后端地址？
 
@@ -151,6 +162,39 @@ npm run preview
 `832402204_calculator_backend` 负责（SQLite，随服务启动自动建表，无需手动初始化）。
 
 前端只需要保证 `VITE_API_BASE_URL` 指向一个正在运行的后端即可。
+
+### 部署到 GitHub Pages（静态托管，前端专用）
+
+> ⚠️ **GitHub Pages 只能托管静态文件，不能运行后端。**
+> 前后端分离架构下这本来就是两个仓库、两台服务：前端可以放 Pages，
+> 后端（FastAPI + SQLite）必须部署在能跑 Python 的地方（云服务器 / 容器平台 / 隧道）。
+
+仓库已内置工作流 [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml)，
+三步即可上线：
+
+1. **推送仓库**到 GitHub（`main` 分支）。
+2. **开启 Pages**：仓库 `Settings → Pages → Build and deployment → Source` 选 **GitHub Actions**。
+3. **配置后端地址**：`Settings → Secrets and variables → Actions → Variables` 新建变量
+   `VITE_API_BASE_URL`，值为后端公网地址（例如 `https://xxx.trycloudflare.com`）。
+
+之后每次推送 `main` 都会自动构建并发布，也可以在 `Actions` 页面手动 `Run workflow`。
+访问地址形如：
+
+```
+https://<你的用户名>.github.io/832402204_calculator_frontend/
+```
+
+构建时使用**相对资源前缀**（`vite.config.js` 里的 `base` 默认为 `./`），
+因此在 `/<仓库名>/` 这样的子路径下资源不会 404；如需自定义前缀，用环境变量
+`VITE_BASE_PATH` 覆盖。
+
+**后端地址变了怎么办？** 三种方式，按省事程度排序：
+
+| 方式 | 操作 | 是否需要重新构建 |
+| --- | --- | --- |
+| 页面参数 | 打开 `...?api=https://新后端地址`（会记住） | 否 |
+| 改配置文件 | 修改 `public/config.js` 里的 `window.__API_BASE__` 后推送 | 否（下次部署即生效） |
+| 改仓库变量 | 修改 Actions 变量 `VITE_API_BASE_URL` 并重新运行工作流 | 是 |
 
 ## 六、前后端连接方式
 

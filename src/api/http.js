@@ -2,14 +2,75 @@
  * http.js —— 基于原生 fetch 的极简 HTTP 封装
  *
  * 职责：
- * 1. 统一基地址（来自 VITE_API_BASE_URL，缺省 http://127.0.0.1:8000）；
+ * 1. 统一基地址（解析顺序见 resolveBaseUrl：?api= → localStorage → config.js → 构建期变量 → 本机兜底）；
  * 2. 统一超时控制（AbortController）；
  * 3. 统一解包后端「扁平信封」{ success, code, message, ...业务字段 }；
  * 4. 统一错误归一化：业务错误直接使用后端 message，网络层错误使用本文件约定的提示文案。
  *
  * 注意：本文件只负责传输与解包，不含任何表达式求值逻辑。
  */
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
+/** 本机默认后端地址（最后兜底，便于助教克隆后直接跑起来） */
+const DEFAULT_BASE_URL = 'http://127.0.0.1:8000';
+
+/** localStorage 键名：记住用户用 ?api= 指定的后端 */
+const STORAGE_KEY = 'calc-api-base';
+
+/** 归一化地址：只接受 http(s) 开头，去掉结尾斜杠 */
+function normalizeBase(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  const trimmed = value.trim().replace(/\/+$/, '');
+  return /^https?:\/\//i.test(trimmed) ? trimmed : '';
+}
+
+function readQueryBase() {
+  try {
+    const value = new URLSearchParams(window.location.search).get('api');
+    const normalized = normalizeBase(value);
+    if (normalized) {
+      window.localStorage.setItem(STORAGE_KEY, normalized);
+    }
+    return normalized;
+  } catch (error) {
+    return '';
+  }
+}
+
+function readStoredBase() {
+  try {
+    return normalizeBase(window.localStorage.getItem(STORAGE_KEY));
+  } catch (error) {
+    return '';
+  }
+}
+
+/**
+ * 解析后端基地址。
+ *
+ * 之所以支持运行时指定：静态托管（如 GitHub Pages）只能承载前端，
+ * 后端地址随时可能变化；把地址放到运行时解析，就**不需要重新构建**即可切换后端。
+ *
+ * 优先级：
+ * 1. `?api=https://...`（会记入 localStorage，便于分享可用的页面链接）
+ * 2. localStorage 中上次记住的地址
+ * 3. `window.__API_BASE__`（由 public/config.js 提供，部署后可直接改文件）
+ * 4. 构建期注入的 `VITE_API_BASE_URL`
+ * 5. 本机默认 http://127.0.0.1:8000
+ */
+function resolveBaseUrl() {
+  return (
+    readQueryBase() ||
+    readStoredBase() ||
+    normalizeBase(typeof window === 'undefined' ? '' : window.__API_BASE__) ||
+    normalizeBase(import.meta.env.VITE_API_BASE_URL) ||
+    DEFAULT_BASE_URL
+  );
+}
+
+/** 当前生效的后端基地址（模块加载时解析一次） */
+const BASE_URL = resolveBaseUrl();
 
 /** 默认请求超时（毫秒） */
 const DEFAULT_TIMEOUT = 15000;
@@ -136,5 +197,5 @@ export const http = {
   delete: (path, options) => request('DELETE', path, options),
 };
 
-export { BASE_URL, DEFAULT_TIMEOUT };
+export { BASE_URL, DEFAULT_TIMEOUT, DEFAULT_BASE_URL, STORAGE_KEY };
 export default http;
