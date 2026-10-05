@@ -3,6 +3,15 @@
 > 学号 **832402204** · 陈俊洁
 > 前端仓库：`832402204_calculator_frontend`（后端仓库：`832402204_calculator_backend`，接口契约：`docs/API_CONTRACT.md`）
 
+## 🔗 在线演示地址（打开即可使用，无需安装环境）
+
+**https://london-click-extended-lewis.trycloudflare.com**
+
+对应的后端接口文档：https://asset-mountains-roger-handbags.trycloudflare.com/docs
+
+> 该地址通过 Cloudflare 快速隧道把本机正在运行的前后端映射到公网，**需要本机保持开机联网**；
+> 隧道域名是临时的，重启后会变化。若失效，请按 README「常见问题」在本机 `npm run dev` 运行。
+
 ## 目录
 
 - [一、项目简介](#一项目简介)
