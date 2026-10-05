@@ -7,10 +7,15 @@
  * 用法：把下面的空串改成后端地址即可，例如：
  *   window.__API_BASE__ = 'https://pic-privacy-merit-detailed.trycloudflare.com';
  *
+ * 单机部署（nginx 托管前端、并把 /api 反向代理到后端）时可以写特殊值：
+ *   window.__API_BASE__ = 'same-origin';
+ * 这样前端请求会打到「与页面同源」的 /api/...，不用把服务器 IP 写死，
+ * 换域名 / 加 HTTPS / 换端口都不需要重新构建。
+ *
  * 优先级（见 src/api/http.js 的 resolveBaseUrl）：
  *   ?api= 参数  >  localStorage  >  本文件  >  构建期 VITE_API_BASE_URL  >  http://127.0.0.1:8000
  *
  * 也就是说：临时想连别的后端，直接在页面地址后面加 `?api=https://xxxx` 即可
- * （会记住到 localStorage，下次打开仍然生效）。
+ * （会记住到 localStorage，下次打开仍然生效；`?api=same-origin` 同样支持）。
  */
 window.__API_BASE__ = '';

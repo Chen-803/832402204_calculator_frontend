@@ -16,6 +16,14 @@ const DEFAULT_BASE_URL = 'http://127.0.0.1:8000';
 /** localStorage 键名：记住用户用 ?api= 指定的后端 */
 const STORAGE_KEY = 'calc-api-base';
 
+/**
+ * 特殊值：表示「与页面同源」。
+ *
+ * 单机部署（nginx 托管前端并把 /api 反代到后端）时用它最省事：
+ * 不用把服务器 IP 写死进前端，换成域名、加 HTTPS、换端口都不用重新构建。
+ */
+const SAME_ORIGIN = 'same-origin';
+
 /** 归一化地址：只接受 http(s) 开头，去掉结尾斜杠 */
 function normalizeBase(value) {
   if (typeof value !== 'string') {
@@ -25,14 +33,25 @@ function normalizeBase(value) {
   return /^https?:\/\//i.test(trimmed) ? trimmed : '';
 }
 
+/** 把配置值转成可用的基地址；识别 same-origin 特殊值，非法值返回空串 */
+function coerceBase(value) {
+  if (typeof value === 'string' && value.trim().toLowerCase() === SAME_ORIGIN) {
+    try {
+      return window.location.origin;
+    } catch (error) {
+      return '';
+    }
+  }
+  return normalizeBase(value);
+}
+
 function readQueryBase() {
   try {
-    const value = new URLSearchParams(window.location.search).get('api');
-    const normalized = normalizeBase(value);
-    if (normalized) {
-      window.localStorage.setItem(STORAGE_KEY, normalized);
+    const base = coerceBase(new URLSearchParams(window.location.search).get('api'));
+    if (base) {
+      window.localStorage.setItem(STORAGE_KEY, base);
     }
-    return normalized;
+    return base;
   } catch (error) {
     return '';
   }
@@ -46,6 +65,14 @@ function readStoredBase() {
   }
 }
 
+function readRuntimeBase() {
+  try {
+    return coerceBase(window.__API_BASE__);
+  } catch (error) {
+    return '';
+  }
+}
+
 /**
  * 解析后端基地址。
  *
@@ -53,7 +80,7 @@ function readStoredBase() {
  * 后端地址随时可能变化；把地址放到运行时解析，就**不需要重新构建**即可切换后端。
  *
  * 优先级：
- * 1. `?api=https://...`（会记入 localStorage，便于分享可用的页面链接）
+ * 1. `?api=https://...`（会记入 localStorage，便于分享可用的页面链接；也支持 `?api=same-origin`）
  * 2. localStorage 中上次记住的地址
  * 3. `window.__API_BASE__`（由 public/config.js 提供，部署后可直接改文件）
  * 4. 构建期注入的 `VITE_API_BASE_URL`
@@ -63,7 +90,7 @@ function resolveBaseUrl() {
   return (
     readQueryBase() ||
     readStoredBase() ||
-    normalizeBase(typeof window === 'undefined' ? '' : window.__API_BASE__) ||
+    readRuntimeBase() ||
     normalizeBase(import.meta.env.VITE_API_BASE_URL) ||
     DEFAULT_BASE_URL
   );
