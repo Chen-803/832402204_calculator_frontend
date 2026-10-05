@@ -5,9 +5,9 @@
 
 ## 🔗 在线演示地址（打开即可使用，无需安装环境）
 
-**https://london-click-extended-lewis.trycloudflare.com**
+**https://anniversary-maternity-tropical-weblog.trycloudflare.com**
 
-对应的后端接口文档：https://asset-mountains-roger-handbags.trycloudflare.com/docs
+对应的后端接口文档：https://pic-privacy-merit-detailed.trycloudflare.com/docs
 
 > 该地址通过 Cloudflare 快速隧道把本机正在运行的前后端映射到公网，**需要本机保持开机联网**；
 > 隧道域名是临时的，重启后会变化。若失效，请按 README「常见问题」在本机 `npm run dev` 运行。
@@ -143,6 +143,14 @@ npm run preview
 
 > ⚠️ Vite 的环境变量是**构建期注入**的：改完 `.env.*` 必须**重启 `npm run dev`** 或**重新 `npm run build`** 才会生效。
 > ⚠️ `npm run build`（production 模式）**不会**读取 `.env.development`，此时走代码里的兜底值 `http://127.0.0.1:8000`；要改生产构建地址请用 `.env.production` 或 `.env.local`。
+
+### 关于数据库初始化
+
+本仓库**不包含数据库**，也不做任何数据库操作：计算历史的持久化完全由后端
+
+`832402204_calculator_backend` 负责（SQLite，随服务启动自动建表，无需手动初始化）。
+
+前端只需要保证 `VITE_API_BASE_URL` 指向一个正在运行的后端即可。
 
 ## 六、前后端连接方式
 
