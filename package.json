@@ -1,0 +1,20 @@
+{
+  "name": "832402204-calculator-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "前后端分离计算器系统 · 前端（Vue 3 + Vite）。计算结果全部由后端产生，前端不做任何表达式求值。",
+  "author": "陈俊洁 (832402204)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^6.0.7"
+  }
+}

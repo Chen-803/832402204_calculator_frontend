@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="前后端分离计算器系统 · 学号 832402204 陈俊洁 · 前端 Vue 3 + Vite，所有计算结果均由后端接口产生"
+    />
+    <meta name="theme-color" content="#3b6ef6" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>前后端分离计算器系统 · 832402204 陈俊洁</title>
+    <script>
+      // 首屏渲染前应用主题偏好，避免暗色主题闪白。
+      // 这里只读取本地偏好（不涉及任何计算逻辑）。
+      (function () {
+        try {
+          var saved = window.localStorage.getItem('calc-theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = saved === 'dark' || saved === 'light' ? saved : prefersDark ? 'dark' : 'light';
+          document.documentElement.dataset.theme = theme;
+        } catch (error) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>本系统需要启用 JavaScript 才能运行。</noscript>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
